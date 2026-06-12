@@ -1,9 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
 import { gqlClient, MUTATIONS, QUERIES } from '../lib/graphqlClient'
 import { SagaExecution } from '../lib/types'
 import { useSagaStore } from '../store/sagaStore'
-
-// ── tipos de respuesta GraphQL ──────────────────────────────────────────────
 
 interface StartOnboardingResponse {
   startOnboarding: SagaExecution
@@ -17,38 +16,34 @@ interface OnboardingStatusResponse {
   onboardingStatus: SagaExecution | null
 }
 
-// ── hook principal ──────────────────────────────────────────────────────────
-
 export function useOnboardingSaga() {
   const queryClient = useQueryClient()
   const { sagaId, isPolling, setSagaId, setSaga, setPolling, reset } = useSagaStore()
 
-  // Polling — activo solo cuando hay un sagaId y isPolling = true
-  // TanStack Query refresca cada segundo mientras el SAGA no esté en estado final
-  const { data: sagaData } = useQuery<OnboardingStatusResponse>({
+  const { data } = useQuery<OnboardingStatusResponse>({
     queryKey: ['saga', sagaId],
-    queryFn: () =>
-      gqlClient.request(QUERIES.onboardingStatus, { sagaId }),
+    queryFn: () => gqlClient.request(QUERIES.onboardingStatus, { sagaId }),
     enabled: !!sagaId && isPolling,
     refetchInterval: (query) => {
       const status = query.state.data?.onboardingStatus?.status
-      const terminal = ['COMPLETED', 'FAILED']
-      // Detener polling cuando llega a estado final
-      if (status && terminal.includes(status)) {
-        setPolling(false)
+      if (status && ['COMPLETED', 'FAILED'].includes(status)) {
         return false
       }
       return 1000
     },
-    select: (data) => {
-      if (data.onboardingStatus) {
-        setSaga(data.onboardingStatus)
-      }
-      return data
-    },
   })
 
-  // Mutation: iniciar onboarding
+  // Sincronizar con Zustand fuera del render
+  useEffect(() => {
+    if (data?.onboardingStatus) {
+      setSaga(data.onboardingStatus)
+      const status = data.onboardingStatus.status
+      if (['COMPLETED', 'FAILED'].includes(status)) {
+        setPolling(false)
+      }
+    }
+  }, [data])
+
   const startMutation = useMutation({
     mutationFn: (userEmail: string) =>
       gqlClient.request<StartOnboardingResponse>(
@@ -66,7 +61,6 @@ export function useOnboardingSaga() {
     },
   })
 
-  // Mutation: ejecutar un paso (con opción de forzar fallo)
   const executeStepMutation = useMutation({
     mutationFn: ({
       stepName,
@@ -89,8 +83,10 @@ export function useOnboardingSaga() {
     },
   })
 
+  const saga = useSagaStore((s) => s.saga)
+
   return {
-    saga: sagaData?.onboardingStatus ?? useSagaStore.getState().saga,
+    saga,
     isPolling,
     startOnboarding: startMutation.mutate,
     isStarting: startMutation.isPending,

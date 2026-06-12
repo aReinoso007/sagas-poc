@@ -23,12 +23,12 @@ class SAGAOrchestrator:
     async def start(self, user_email: str) -> SagaExecution:
         saga = SagaExecution(
             user_email=user_email,
-            status = SagaStatus.RUNNING,
-            current_step = 0
+            status=SagaStatus.RUNNING,
+            current_step=0,
         )
         self.db.add(saga)
         await self.db.flush()
-        
+
         for i, step_name in enumerate(self.STEPS):
             step = SagaStep(
                 saga_id=saga.id,
@@ -37,13 +37,11 @@ class SAGAOrchestrator:
                 status=StepStatus.PENDING,
                 idempotency_key=f"{saga.id}:{step_name}",
             )
-        
+            self.db.add(step)
+
         await self.db.commit()
-        
-        # use _get_saga_with_steps instead of refresh
-        # to guarantee that steps are loaded with selectinload
         return await self._get_saga_with_steps(saga.id)
-    
+
     async def execute_step(
         self,
         saga_id: uuid.UUID,
@@ -120,12 +118,14 @@ class SAGAOrchestrator:
         await self._update_saga(saga.id, SagaStatus.FAILED, failed_step_number)
 
     async def _get_saga_with_steps(self, saga_id: uuid.UUID) -> SagaExecution:
+        self.db.expire_all()
+
         result = await self.db.execute(
             select(SagaExecution)
             .where(SagaExecution.id == saga_id)
             .options(selectinload(SagaExecution.steps))
         )
-        saga = result.scalar_one_or_none()
+        saga = result.unique().scalar_one_or_none()
         if not saga:
             raise ValueError(f"SAGA {saga_id} no encontrada")
         return saga

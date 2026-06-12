@@ -271,18 +271,29 @@ uvicorn app.main:app --reload --port 8000
 
 ### Happy path — all steps completed
 <!-- Add screenshot here -->
+<img width="726" height="825" alt="image" src="https://github.com/user-attachments/assets/39c16b83-cb19-4917-804a-2ee57b74c9b1" />
+
 
 ### Compensation flow — Plaid fails, prior steps rolled back
 <!-- Add screenshot here -->
+<img width="726" height="825" alt="image" src="https://github.com/user-attachments/assets/c9e04431-25bb-427c-a439-73cb82ef1797" />
+
 
 ### GraphQL Playground — startOnboarding mutation
 <!-- Add screenshot here -->
+<img width="1367" height="618" alt="image" src="https://github.com/user-attachments/assets/9e2066b3-c1e8-4161-a263-b936b0e96837" />
+
+
 
 ### GraphQL Playground — executeStep with forceFail
+<img width="1367" height="618" alt="image" src="https://github.com/user-attachments/assets/f7a18e61-ff40-4999-b4ee-f97c8739d500" />
+
 <!-- Add screenshot here -->
 
 ### GraphQL Playground — onboardingStatus query showing FAILED + COMPENSATED steps
 <!-- Add screenshot here -->
+<img width="1367" height="798" alt="image" src="https://github.com/user-attachments/assets/0f076080-c082-4e3a-84ae-51117b63e785" />
+
 
 ---
 

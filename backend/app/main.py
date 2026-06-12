@@ -15,7 +15,19 @@ async def lifespan(app: FastAPI):
     yield
 
 
-async def get_context():
+class Context:
+    def __init__(self):
+        self.db = None
+
+    async def __aenter__(self):
+        self.db = AsyncSessionLocal()
+        return {"db": self.db}
+
+    async def __aexit__(self, *args):
+        await self.db.close()
+
+
+async def get_context() -> dict:
     async with AsyncSessionLocal() as db:
         yield {"db": db}
 

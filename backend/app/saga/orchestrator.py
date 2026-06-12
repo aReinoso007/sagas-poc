@@ -23,12 +23,12 @@ class SAGAOrchestrator:
     async def start(self, user_email: str) -> SagaExecution:
         saga = SagaExecution(
             user_email=user_email,
-            status=SagaStatus.RUNNING,
-            current_step=0,
+            status = SagaStatus.RUNNING,
+            current_step = 0
         )
         self.db.add(saga)
         await self.db.flush()
-
+        
         for i, step_name in enumerate(self.STEPS):
             step = SagaStep(
                 saga_id=saga.id,
@@ -37,12 +37,13 @@ class SAGAOrchestrator:
                 status=StepStatus.PENDING,
                 idempotency_key=f"{saga.id}:{step_name}",
             )
-            self.db.add(step)
-
+        
         await self.db.commit()
-        await self.db.refresh(saga)
-        return saga
-
+        
+        # use _get_saga_with_steps instead of refresh
+        # to guarantee that steps are loaded with selectinload
+        return await self._get_saga_with_steps(saga.id)
+    
     async def execute_step(
         self,
         saga_id: uuid.UUID,

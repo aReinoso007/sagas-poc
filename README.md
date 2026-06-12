@@ -318,4 +318,4 @@ for fast iteration without restructuring the app.
 ## Author
 
 Alex Reinoso — Full Stack Engineer
-[LinkedIn](https://linkedin.com/alex-reinoso) · [Portfolio](https://areinoso007.github.io/portfolio)
+[LinkedIn](https://www.linkedin.com/in/alex-reinoso/) · [Portfolio](https://areinoso007.github.io/portfolio)

@@ -1,4 +1,22 @@
-backend:
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: saga
+      POSTGRES_PASSWORD: saga
+      POSTGRES_DB: saga_poc
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saga -d saga_poc"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
     build:
       context: ./backend
     ports:
@@ -11,3 +29,19 @@ backend:
     volumes:
       - ./backend:/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_GRAPHQL_URL: http://localhost:8000/graphql
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+volumes:
+  postgres_data:
